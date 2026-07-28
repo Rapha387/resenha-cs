@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(npm run build)"
+      "PowerShell(npm run build)",
+      "PowerShell(npm run dev)",
+      "Bash(curl -s -o /dev/null http://127.0.0.1:3000/api/ranking)",
+      "PowerShell($env:TURSO_DATABASE_URL=\"file:test-local.db\"; $env:SESSION_SECRET=\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\"; node test-flow.mjs)"
     ]
   }
 }

@@ -1,8 +1,6 @@
 import crypto from 'crypto';
-import fs from 'fs';
 
-
-const SECRET = fs.readFileSync('.session-secret', 'utf8').trim();
+const SECRET = process.env.SESSION_SECRET;
 const sign = v => `${v}.${crypto.createHmac('sha256', SECRET).update(v).digest('hex')}`;
 const BASE = 'http://127.0.0.1:3000';
 const u1 = { steamid: '76561198000000001' };

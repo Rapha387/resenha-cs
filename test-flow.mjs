@@ -1,10 +1,13 @@
 // test-flow.js — simula 4 jogadores no fluxo completo (só pra teste local)
 import crypto from 'crypto';
-import fs from 'fs';
-import Database from 'better-sqlite3';
-const db = new Database('resenha.db');
+import { createClient } from '@libsql/client';
 
-const SECRET = fs.readFileSync('.session-secret', 'utf8').trim();
+const db = createClient({
+  url: process.env.TURSO_DATABASE_URL,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
+
+const SECRET = process.env.SESSION_SECRET;
 const sign = v => `${v}.${crypto.createHmac('sha256', SECRET).update(v).digest('hex')}`;
 const BASE = 'http://127.0.0.1:3000';
 
@@ -31,8 +34,11 @@ async function call(user, method, path, body) {
 
 (async () => {
   for (const f of FAKES) {
-    db.prepare(`INSERT OR REPLACE INTO players (steamid, name, premier, elo, wins, losses, created)
-                VALUES (?, ?, ?, 1000, 0, 0, ?)`).run(f.steamid, f.name, f.premier, Date.now());
+    await db.execute({
+      sql: `INSERT OR REPLACE INTO players (steamid, name, premier, elo, wins, losses, created)
+            VALUES (?, ?, ?, 1000, 0, 0, ?)`,
+      args: [f.steamid, f.name, f.premier, Date.now()],
+    });
   }
   const [rapha, cabra, zoio, neguin] = FAKES;
 

@@ -5,18 +5,12 @@
 /.next/
 /out/
 
-# Production
-/build
-
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Variáveis de ambiente — contêm TURSO_AUTH_TOKEN e SESSION_SECRET.
+# O padrão é amplo de propósito: pega .env, .env.local, .env.production etc.
+.env*
 !.env.example
 
-# SQLite
+# Bancos locais de teste (produção usa Turso, via variáveis de ambiente)
 *.db
 *.db-shm
 *.db-wal

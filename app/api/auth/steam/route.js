@@ -1,9 +1,10 @@
 // Redireciona pro login OpenID da Steam
 import { NextResponse } from 'next/server';
+import { baseUrl } from '@/lib/baseUrl';
 export const dynamic = 'force-dynamic';
 
-export function GET() {
-  const BASE_URL = (process.env.BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')).replace(/\/$/, '');
+export function GET(request) {
+  const BASE_URL = baseUrl(request);
   const params = new URLSearchParams({
     'openid.ns': 'http://specs.openid.net/auth/2.0',
     'openid.mode': 'checkid_setup',

@@ -8,10 +8,10 @@ export const dynamic = 'force-dynamic';
 // jogadores que ficaram com nome genérico "Player XXXX" (bug da v1)
 let consertou = false;
 
-export function GET() {
+export async function GET() {
   if (!consertou) {
     consertou = true;
     fixGenericNames(db).catch(() => {});
   }
-  return NextResponse.json({ user: currentUser() });
+  return NextResponse.json({ user: await currentUser() });
 }

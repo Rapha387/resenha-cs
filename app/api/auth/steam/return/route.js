@@ -4,11 +4,12 @@ import { db } from '@/lib/db';
 import { sign, COOKIE_NAME, cookieOptions } from '@/lib/session';
 import { fetchSteamProfile } from '@/lib/steam';
 import { refreshStats } from '@/lib/game';
+import { baseUrl } from '@/lib/baseUrl';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
-  const BASE_URL = (process.env.BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')).replace(/\/$/, '');
+  const BASE_URL = baseUrl(request);
   try {
     const url = new URL(request.url);
     const params = new URLSearchParams(url.searchParams);
@@ -46,16 +47,18 @@ export async function GET(request) {
     // nome e avatar de verdade (com ou sem STEAM_API_KEY)
     const perfil = await fetchSteamProfile(steamid);
 
-    const exists = db.prepare('SELECT steamid FROM players WHERE steamid = ?').get(steamid);
+    const exists = await db.prepare('SELECT steamid FROM players WHERE steamid = ?').get(steamid);
     if (exists) {
-      db.prepare('UPDATE players SET name = ?, avatar = ? WHERE steamid = ?')
+      await db.prepare('UPDATE players SET name = ?, avatar = ? WHERE steamid = ?')
         .run(perfil.name, perfil.avatar, steamid);
     } else {
-      db.prepare('INSERT INTO players (steamid, name, avatar, created) VALUES (?, ?, ?, ?)')
+      await db.prepare('INSERT INTO players (steamid, name, avatar, created) VALUES (?, ?, ?, ?)')
         .run(steamid, perfil.name, perfil.avatar, Date.now());
     }
 
-    refreshStats(steamid); // Leetify em segundo plano, não trava o login
+    // Não damos await: a Leetify pode demorar até ~24s e estourar o limite de
+    // execução da função. As stats entram depois, via /api/me/refresh-stats.
+    refreshStats(steamid);
 
     console.log('Steam login success', { steamid, userExists: !!exists });
 

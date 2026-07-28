@@ -13,41 +13,84 @@ Site pra organizar o 5x5 do grupo: login via Steam, nome e avatar reais puxados 
   - Entrar de novo (pelo link) num lobby já iniciado dava erro → agora reconhece que você já tá dentro
   - Elo podia ficar negativo → agora o mínimo é 0
   - Registro de placar agora é atômico (transação): ou grava tudo, ou nada
+  - **Banco migrado pra Turso (libSQL)**: o SQLite em arquivo quebrava na Vercel
+    (`SQLITE_CANTOPEN` — disco somente-leitura) e, mesmo no `/tmp`, os dados não
+    eram compartilhados entre as instâncias
+  - **Login da Steam** voltava pro domínio único do deploy em vez do domínio de
+    verdade, gravando o cookie no lugar errado → agora o endereço é detectado
+    do próprio request
 
 ## O que precisa ter instalado
 
 - **Node.js 18.17 ou mais novo** — https://nodejs.org (versão LTS)
+- Uma conta grátis no **Turso** — https://turso.tech (é o banco de dados)
+
+## Banco de dados (Turso)
+
+O projeto usa Turso (libSQL, mesmo dialeto do SQLite) acessado por HTTP. Não é
+um arquivo local: em hospedagem serverless (Vercel) o disco é somente-leitura e
+o `/tmp` não é compartilhado entre requisições, então um arquivo `.db` não
+funciona lá.
+
+Crie o banco e pegue as credenciais:
+
+```
+turso db create resenha-cs
+turso db show resenha-cs --url        # -> TURSO_DATABASE_URL
+turso db tokens create resenha-cs     # -> TURSO_AUTH_TOKEN
+```
+
+As tabelas são criadas sozinhas na primeira requisição.
 
 ## Como rodar
 
 ```
 npm install
+cp .env.example .env.local    # preencha as variáveis obrigatórias
 npm run build
 npm start
 ```
 
-Abra http://localhost:3000 e clique em **Entrar com a Steam**. O banco (`resenha.db`) é criado sozinho.
+Abra http://localhost:3000 e clique em **Entrar com a Steam**.
 
 Pra desenvolver/mexer no código, use `npm run dev` (recarrega sozinho a cada mudança).
 
-**Opcional:** copie `.env.example` pra `.env.local` e preencha a `STEAM_API_KEY` (grátis em https://steamcommunity.com/dev/apikey). Sem ela o site funciona normal; com ela, a busca de nome/avatar usa a API oficial (um pouco mais confiável que o perfil público, que precisa estar visível).
+## Variáveis de ambiente
+
+| Variável | Obrigatória? | Pra que serve |
+|---|---|---|
+| `TURSO_DATABASE_URL` | **sim** | endereço do banco |
+| `TURSO_AUTH_TOKEN` | **sim** | token de acesso ao banco |
+| `SESSION_SECRET` | **sim** | assina o cookie de login (`openssl rand -hex 32`) |
+| `BASE_URL` | não | força um endereço fixo; por padrão é detectado do próprio request |
+| `STEAM_API_KEY` | não | usa a API oficial da Steam pro nome/avatar |
+
+Sobre a `STEAM_API_KEY` (grátis em https://steamcommunity.com/dev/apikey): sem
+ela o site funciona normal, puxando nome e avatar do perfil público. Com ela,
+funciona até com perfil privado.
+
+> **`SESSION_SECRET` é obrigatória em produção.** Sem ela, cada instância
+> serverless geraria um segredo diferente e os jogadores seriam deslogados
+> aleatoriamente — por isso o app falha explicitamente em vez de improvisar.
 
 > Se o nickname de alguém aparecer errado: perfil privado na Steam esconde o XML público. A pessoa configura o perfil como público, ou você adiciona a `STEAM_API_KEY` — com a chave funciona até com perfil privado.
 
 ## Como os amigos acessam
 
-O login da Steam exige que todo mundo use o **mesmo endereço** do `BASE_URL` no `.env.local`:
+**Opção A — Vercel (recomendado):** faça o deploy e configure as variáveis de
+ambiente da tabela acima em *Settings → Environment Variables*. Não precisa de
+`BASE_URL`: o endereço é detectado do próprio request, o que funciona tanto no
+domínio de produção quanto nos previews.
 
-**Opção A — Cloudflare Tunnel (recomendado, grátis, sem mexer no roteador):**
+**Opção B — Cloudflare Tunnel (rodando no seu PC, sem mexer no roteador):**
 ```
 npm install -g cloudflared
 cloudflared tunnel --url http://localhost:3000
 ```
-Ele gera um link `https://....trycloudflare.com`. Coloque no `BASE_URL`, reinicie (`npm start`) e mande o link no grupo.
+Ele gera um link `https://....trycloudflare.com`. Mande no grupo — também
+funciona sem `BASE_URL`.
 
-**Opção B — Tailscale/Radmin VPN:** `BASE_URL=http://SEU_IP_DA_VPN:3000`.
-
-**Opção C — Port forward:** lembrando que IP da Claro costuma ser CGNAT, aí só com A ou B.
+**Opção C — Tailscale/Radmin VPN:** `BASE_URL=http://SEU_IP_DA_VPN:3000`.
 
 ## Stats da Leetify
 
@@ -61,14 +104,20 @@ Edite a lista `MAPS` em `lib/game.js`.
 
 ## Testar a instalação
 
-Com o servidor rodando, em outro terminal:
+Com o servidor rodando, em outro terminal (os scripts leem as mesmas variáveis
+de ambiente do app):
 
 ```
 node test-flow.mjs     # simula 4 jogadores: lobby → draft → veto → placar
 node test-fixes.mjs    # valida as correções de bug
 ```
 
-Depois apague o `resenha.db` pra zerar os jogadores falsos antes de usar de verdade.
+Eles criam jogadores falsos (steamids começando com `7656119800000000`). Aponte
+para um banco de testes separado, ou apague essas linhas depois:
+
+```
+turso db shell resenha-cs "DELETE FROM players WHERE steamid LIKE '7656119800000000%'"
+```
 
 ## Fluxo da resenha
 
