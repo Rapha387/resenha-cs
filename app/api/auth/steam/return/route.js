@@ -14,6 +14,14 @@ export async function GET(request) {
     const params = new URLSearchParams(url.searchParams);
     params.set('openid.mode', 'check_authentication');
 
+    console.log('Steam return callback', {
+      baseUrl: BASE_URL,
+      return_to: url.searchParams.get('openid.return_to'),
+      claimed_id: url.searchParams.get('openid.claimed_id'),
+      mode: url.searchParams.get('openid.mode'),
+      assoc_handle: url.searchParams.get('openid.assoc_handle'),
+    });
+
     const verify = await fetch('https://steamcommunity.com/openid/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -21,7 +29,12 @@ export async function GET(request) {
       cache: 'no-store',
     });
     const text = await verify.text();
+    if (!verify.ok) {
+      console.error('Steam OpenID verify HTTP error', verify.status, text);
+      return new NextResponse('Erro ao verificar o login Steam.', { status: 502 });
+    }
     if (!text.includes('is_valid:true')) {
+      console.error('Steam OpenID verify invalid response', text);
       return new NextResponse('Login Steam inválido. Volte e tente novamente.', { status: 403 });
     }
 
@@ -43,6 +56,8 @@ export async function GET(request) {
     }
 
     refreshStats(steamid); // Leetify em segundo plano, não trava o login
+
+    console.log('Steam login success', { steamid, userExists: !!exists });
 
     const res = NextResponse.redirect(BASE_URL + '/');
     res.cookies.set(COOKIE_NAME, sign(steamid), cookieOptions);
