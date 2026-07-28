@@ -8,7 +8,7 @@ import { refreshStats } from '@/lib/game';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
-  const BASE_URL = (process.env.BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const BASE_URL = (process.env.BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')).replace(/\/$/, '');
   try {
     const url = new URL(request.url);
     const params = new URLSearchParams(url.searchParams);

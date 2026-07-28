@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 export function GET() {
-  const BASE_URL = (process.env.BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const BASE_URL = (process.env.BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')).replace(/\/$/, '');
   const params = new URLSearchParams({
     'openid.ns': 'http://specs.openid.net/auth/2.0',
     'openid.mode': 'checkid_setup',
