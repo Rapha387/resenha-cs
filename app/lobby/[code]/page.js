@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useLobby } from '@/hooks/useLobby';
+import { useLiveMatch } from '@/hooks/useLiveMatch';
 
 import PageShell from '@/components/layout/PageShell';
 import Alert from '@/components/ui/Alert';
@@ -9,6 +10,7 @@ import Loading from '@/components/ui/Loading';
 import DecidedMapPanel from '@/components/lobby/DecidedMapPanel';
 import FinalScorePanel from '@/components/lobby/FinalScorePanel';
 import LobbyCodeBadge from '@/components/lobby/LobbyCodeBadge';
+import LiveScorePanel from '@/components/lobby/LiveScorePanel';
 import LobbyNotFound from '@/components/lobby/LobbyNotFound';
 import MapGrid from '@/components/lobby/MapGrid';
 import ScoreForm from '@/components/lobby/ScoreForm';
@@ -21,6 +23,7 @@ export default function LobbyPage() {
   const CODE = String(rawCode || '').toUpperCase();
 
   const { me, state, derivado, naoExiste, erro, mostraErro, acao } = useLobby(CODE);
+  const live = useLiveMatch(CODE, state?.lobby?.status === 'pronto');
   const [modo, setModo] = useState('capitaes');
   const [caps, setCaps] = useState({ a: null, b: null });
 
@@ -130,11 +133,17 @@ export default function LobbyPage() {
 
       {lobby.status === 'pronto' && (
         <>
+          <LiveScorePanel live={live} nomeA={nomeA} nomeB={nomeB} />
           <DecidedMapPanel mapaNome={nomeMapa}>
             {souDono ? (
               <ScoreForm
                 nomeA={nomeA}
                 nomeB={nomeB}
+                // Partida encerrada no CS2: já chega com o placar preenchido,
+                // o dono só confere e confirma (o elo só muda no clique).
+                sugestao={live?.finished && live.score_a !== null
+                  ? { a: live.score_a, b: live.score_b }
+                  : null}
                 onSubmit={(scoreA, scoreB) => acao('result', { scoreA, scoreB })}
               />
             ) : (

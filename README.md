@@ -123,9 +123,20 @@ turso db shell resenha-cs "DELETE FROM players WHERE steamid LIKE '7656119800000
 
 O perfil tem o botão **"Conectar Resenha Client"**: gera um código de 6
 caracteres (uso único, expira em 5 min, tabela `client_pair_codes`) que o
-usuário digita no app desktop. O backend dedicado (a implementar) troca esse
-código por access/refresh tokens em `POST /api/client/auth/pair`, validando na
-mesma tabela — ver o README do `resenha-client` pro contrato completo.
+usuário digita no app desktop. O backend dedicado (`resenha-backend`) troca
+esse código por access/refresh tokens, valida a sessão e manda os comandos de
+partida pro app.
+
+Com `BACKEND_URL` e `BACKEND_INTERNAL_KEY` configuradas, o site também:
+
+- avisa o backend quando o veto termina (liga a coleta no CS2) e quando o
+  placar é registrado (desliga);
+- mostra o **placar ao vivo** na tela do lobby enquanto a galera joga (K/D/A
+  de cada um, direto do CS2);
+- **sugere o placar final** no formulário quando a partida acaba — o dono só
+  confere e confirma (o elo continua mudando só no clique).
+
+Sem essas variáveis o site funciona exatamente como antes, só sem essas partes.
 
 ## Fluxo da resenha
 

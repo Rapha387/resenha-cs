@@ -584,10 +584,73 @@ table.ranking tr.eu { background: rgba(94, 155, 214, .07); }
 .mb { margin-bottom: 24px; }
 .fraco { color: var(--texto-fraco); font-size: 13px; }
 
+/* ============ placar ao vivo (Resenha Client) ============ */
+.live-painel { border-left: 3px solid var(--ct); }
+
+.live-topo {
+  display: flex; align-items: center; gap: 10px;
+  flex-wrap: wrap; margin-bottom: 12px;
+}
+.live-tag {
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  letter-spacing: .14em; color: var(--ct);
+  animation: pulsa 2s ease-in-out infinite;
+}
+.live-tag.fim { color: var(--texto-fraco); animation: none; }
+@keyframes pulsa { 50% { opacity: .45; } }
+
+.live-placar {
+  display: flex; align-items: center; justify-content: center; gap: 18px;
+  padding: 10px 0 16px;
+}
+.live-placar .lado { display: flex; align-items: center; gap: 12px; }
+.live-placar .lado b { font-family: var(--display); font-size: 40px; line-height: 1; }
+.live-placar .time {
+  font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--texto-fraco); max-width: 120px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.live-placar .x { font-family: var(--display); font-size: 22px; color: var(--texto-fraco); }
+
+.live-times { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.live-times .rotulo {
+  font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--texto-fraco); margin-bottom: 8px;
+}
+
+.live-jogador {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 0; font-size: 13px;
+}
+.live-jogador .nome { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.live-jogador .lado {
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  padding: 1px 5px; border-radius: 3px;
+}
+.live-jogador .lado-ct { background: rgba(91, 141, 199, .18); color: var(--ct); }
+.live-jogador .lado-t { background: rgba(224, 169, 62, .16); color: var(--tr); }
+.live-jogador .kda { font-family: var(--mono); font-size: 12px; color: var(--texto-fraco); }
+.live-jogador.aguardando { opacity: .5; }
+.live-jogador.morto .nome { text-decoration: line-through; opacity: .6; }
+.live-jogador .kda.aviso { font-size: 10px; letter-spacing: .04em; }
+
+.live-alerta {
+  font-size: 12px; color: var(--texto-fraco);
+  border: 1px solid var(--tr-escuro); border-left: 3px solid var(--tr);
+  background: rgba(224, 169, 62, .06);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  margin-bottom: 12px;
+}
+.live-alerta b { color: var(--texto); }
+
+.live-legenda { margin-top: 12px; }
+
 /* ============ responsivo ============ */
 @media (max-width: 860px) {
   .times { grid-template-columns: 1fr; }
   .vs { display: none; }
+  .live-times { grid-template-columns: 1fr; }
 }
 @media (max-width: 720px) {
   .grid-2 { grid-template-columns: 1fr; }
