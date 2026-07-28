@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { currentUser } from '@/lib/session';
 import { MAPS } from '@/lib/game';
+import { notifyBackend } from '@/lib/backend';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request, { params }) {
@@ -29,6 +30,8 @@ export async function POST(request, { params }) {
   if (remaining.length === 1) {
     await db.prepare('UPDATE lobbies SET status = ?, decider_map = ?, turn = NULL WHERE code = ?')
       .run('pronto', remaining[0].id, code);
+    // Veto encerrado: o backend dedicado manda START_MATCH pros Resenha Clients
+    await notifyBackend('/internal/match/start', { code });
   } else {
     const next = lobby.turn === lobby.cap_a ? lobby.cap_b : lobby.cap_a;
     await db.prepare('UPDATE lobbies SET turn = ? WHERE code = ?').run(next, code);

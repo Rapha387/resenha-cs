@@ -119,6 +119,14 @@ para um banco de testes separado, ou apague essas linhas depois:
 turso db shell resenha-cs "DELETE FROM players WHERE steamid LIKE '7656119800000000%'"
 ```
 
+## Resenha Client (app desktop)
+
+O perfil tem o botão **"Conectar Resenha Client"**: gera um código de 6
+caracteres (uso único, expira em 5 min, tabela `client_pair_codes`) que o
+usuário digita no app desktop. O backend dedicado (a implementar) troca esse
+código por access/refresh tokens em `POST /api/client/auth/pair`, validando na
+mesma tabela — ver o README do `resenha-client` pro contrato completo.
+
 ## Fluxo da resenha
 
 1. Alguém cria o lobby e manda o código de 5 letras no grupo

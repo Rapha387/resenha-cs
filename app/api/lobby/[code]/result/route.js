@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { currentUser } from '@/lib/session';
+import { notifyBackend } from '@/lib/backend';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request, { params }) {
@@ -40,5 +41,7 @@ export async function POST(request, { params }) {
     args: ['finalizado', code],
   });
   await db.batch(statements);
+  // Placar registrado: o backend dedicado manda END_MATCH pros Resenha Clients
+  await notifyBackend('/internal/match/end', { code });
   return NextResponse.json({ ok: true });
 }
