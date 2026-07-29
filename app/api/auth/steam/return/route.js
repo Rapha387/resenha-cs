@@ -1,7 +1,7 @@
 // Valida o retorno da Steam, cria/atualiza o jogador e abre a sessão
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { sign, COOKIE_NAME, cookieOptions } from '@/lib/session';
+import { sign, COOKIE_NAME, cookieOptionsFor } from '@/lib/session';
 import { fetchSteamProfile } from '@/lib/steam';
 import { refreshStats } from '@/lib/game';
 import { baseUrl } from '@/lib/baseUrl';
@@ -63,7 +63,7 @@ export async function GET(request) {
     console.log('Steam login success', { steamid, userExists: !!exists });
 
     const res = NextResponse.redirect(BASE_URL + '/');
-    res.cookies.set(COOKIE_NAME, sign(steamid), cookieOptions);
+    res.cookies.set(COOKIE_NAME, sign(steamid), cookieOptionsFor(BASE_URL));
     return res;
   } catch (err) {
     console.error('Erro no retorno da Steam:', err);

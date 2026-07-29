@@ -18,6 +18,35 @@ const FAKES = [
   { steamid: '76561198000000004', name: 'Neguin', premier: 7000 },
 ];
 
+// Códigos dos lobbies criados durante o teste (pra limpeza no final).
+const criados = [];
+
+// Apaga tudo que o teste criou. Sem isso os 4 fakes ficavam pra sempre no
+// banco apontado por TURSO_DATABASE_URL — inclusive no ranking, se alguém
+// rodasse o teste apontando pra produção.
+async function cleanup() {
+  const ids = FAKES.map(f => f.steamid);
+  const codes = criados.length ? criados : ['_NENHUM_'];
+  const inIds = ids.map(() => '?').join(',');
+  const inCodes = codes.map(() => '?').join(',');
+  const stmts = [
+    // live_matches/match_events são do backend dedicado — se BACKEND_URL
+    // estiver configurada no dev, o veto cria partidas ao vivo pros lobbies
+    // do teste. As tabelas podem nem existir; o try engole isso.
+    { sql: `DELETE FROM match_events WHERE match_id IN (SELECT id FROM live_matches WHERE code IN (${inCodes}))`, args: codes },
+    { sql: `DELETE FROM live_matches WHERE code IN (${inCodes})`, args: codes },
+    { sql: `DELETE FROM vetoes WHERE code IN (${inCodes})`, args: codes },
+    { sql: `DELETE FROM matches WHERE code IN (${inCodes})`, args: codes },
+    { sql: `DELETE FROM lobby_players WHERE code IN (${inCodes})`, args: codes },
+    { sql: `DELETE FROM lobbies WHERE code IN (${inCodes})`, args: codes },
+    { sql: `DELETE FROM players WHERE steamid IN (${inIds})`, args: ids },
+  ];
+  for (const s of stmts) {
+    try { await db.execute({ sql: s.sql, args: s.args }); } catch {}
+  }
+  console.log('✓ dados de teste removidos');
+}
+
 async function call(user, method, path, body) {
   const res = await fetch(BASE + path, {
     method,
@@ -43,6 +72,7 @@ async function call(user, method, path, body) {
   const [rapha, cabra, zoio, neguin] = FAKES;
 
   const { code } = await call(rapha, 'POST', '/api/lobby');
+  criados.push(code);
   console.log('✓ lobby criado:', code);
 
   for (const f of [cabra, zoio, neguin]) await call(f, 'POST', `/api/lobby/${code}/join`);
@@ -91,6 +121,7 @@ async function call(user, method, path, body) {
 
   // teste do modo automático de balanceamento
   const { code: code2 } = await call(rapha, 'POST', '/api/lobby');
+  criados.push(code2);
   for (const f of [cabra, zoio, neguin]) await call(f, 'POST', `/api/lobby/${code2}/join`);
   await call(rapha, 'POST', `/api/lobby/${code2}/start`, { mode: 'auto' });
   s = await call(rapha, 'GET', `/api/lobby/${code2}`);
@@ -99,4 +130,6 @@ async function call(user, method, path, body) {
   console.log('✓ auto-balance → A:', tA.join(','), '| B:', tB.join(','), '| status:', s.lobby.status);
 
   console.log('\nTUDO PASSOU ✔');
-})().catch(e => { console.error('✗', e.message); process.exit(1); });
+})()
+  .catch(e => { console.error('✗', e.message); process.exitCode = 1; })
+  .finally(cleanup); // process.exit(1) aqui mataria o processo antes da limpeza

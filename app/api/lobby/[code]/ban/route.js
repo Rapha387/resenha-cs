@@ -23,8 +23,13 @@ export async function POST(request, { params }) {
   if (banned.includes(map))
     return NextResponse.json({ erro: 'Esse mapa já foi banido.' }, { status: 400 });
 
-  await db.prepare('INSERT INTO vetoes (code, map, banned_by, ord) VALUES (?, ?, ?, ?)')
+  // OR IGNORE + rowsAffected fecha a corrida do duplo clique: dois POSTs do
+  // mesmo ban chegavam juntos, os dois passavam no check acima e o segundo
+  // INSERT estourava a PRIMARY KEY (code, map) — erro 500 na tela do capitão.
+  const ins = await db.prepare('INSERT OR IGNORE INTO vetoes (code, map, banned_by, ord) VALUES (?, ?, ?, ?)')
     .run(code, map, user.steamid, banned.length + 1);
+  if (Number(ins.rowsAffected) === 0)
+    return NextResponse.json({ erro: 'Esse mapa já foi banido.' }, { status: 400 });
 
   const remaining = MAPS.filter(m => !banned.includes(m.id) && m.id !== map);
   if (remaining.length === 1) {

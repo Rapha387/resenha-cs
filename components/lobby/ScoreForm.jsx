@@ -6,6 +6,7 @@ export default function ScoreForm({ nomeA, nomeB, onSubmit, sugestao = null }) {
   const [a, setA] = useState('');
   const [b, setB] = useState('');
   const [veioDoJogo, setVeioDoJogo] = useState(false);
+  const [enviando, setEnviando] = useState(false);
   const jaSugeriu = useRef(false);
 
   // Placar detectado pelo Resenha Client: preenche uma única vez e não
@@ -23,9 +24,16 @@ export default function ScoreForm({ nomeA, nomeB, onSubmit, sugestao = null }) {
   const preenchido = Number.isInteger(na) && Number.isInteger(nb) && na >= 0 && nb >= 0;
   const empate = preenchido && na === nb;
 
-  function registrar() {
-    if (!preenchido || empate) return;
-    onSubmit(na, nb);
+  // Trava contra duplo clique: o servidor até se protege, mas nem faz sentido
+  // disparar dois POSTs de registro do mesmo placar.
+  async function registrar() {
+    if (!preenchido || empate || enviando) return;
+    setEnviando(true);
+    try {
+      await onSubmit(na, nb);
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
@@ -43,7 +51,9 @@ export default function ScoreForm({ nomeA, nomeB, onSubmit, sugestao = null }) {
             value={b} onChange={e => { setB(e.target.value); setVeioDoJogo(false); }} />
         </label>
       </div>
-      <Button variante="tr" type="submit" disabled={!preenchido || empate}>Registrar placar</Button>
+      <Button variante="tr" type="submit" disabled={!preenchido || empate || enviando}>
+        {enviando ? 'Registrando…' : 'Registrar placar'}
+      </Button>
       {veioDoJogo && !empate
         ? <p className="fraco">✓ Placar detectado no CS2. Confira e confirme.</p>
         : null}

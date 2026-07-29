@@ -18,6 +18,9 @@ export function useLobby(code) {
   const meRef = useRef(null);
   const buscando = useRef(false);
   const refazer = useRef(false);
+  // 'finalizado' é estado terminal: nada mais muda no lobby, então o polling
+  // de 2s vira só custo (relevante com o site na Vercel e o banco no Turso).
+  const terminou = useRef(false);
 
   const atualizar = useCallback(async function busca() {
     // consulta em voo: marca pra refazer no fim em vez de disparar em paralelo
@@ -32,7 +35,9 @@ export function useLobby(code) {
         setMe(user);
         await api(`/api/lobby/${code}/join`, { method: 'POST' }).catch(() => {});
       }
-      setState(await api(`/api/lobby/${code}`));
+      const dados = await api(`/api/lobby/${code}`);
+      terminou.current = dados?.lobby?.status === 'finalizado';
+      setState(dados);
       setNaoExiste(false);
     } catch (e) {
       // erro de rede no polling é silencioso; só lobby inexistente muda a tela
@@ -45,8 +50,8 @@ export function useLobby(code) {
 
   useEffect(() => {
     atualizar();
-    const id = setInterval(() => { if (!document.hidden) atualizar(); }, INTERVALO);
-    const aoVoltar = () => { if (!document.hidden) atualizar(); };
+    const id = setInterval(() => { if (!document.hidden && !terminou.current) atualizar(); }, INTERVALO);
+    const aoVoltar = () => { if (!document.hidden && !terminou.current) atualizar(); };
     document.addEventListener('visibilitychange', aoVoltar);
     return () => {
       clearInterval(id);
