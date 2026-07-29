@@ -111,10 +111,13 @@ async function call(user, method, path, body) {
   }
   console.log(`✓ veto completo (${i} bans) → mapa:`, s.lobby.decider_map, '| status:', s.lobby.status);
 
-  await call(rapha, 'POST', `/api/lobby/${code}/result`, { scoreA: 13, scoreB: 9 });
+  // O registro manual foi removido: o placar agora entra sozinho quando o
+  // backend recebe o GAME_OVER do CS2 (coberto pelos testes do backend).
+  await call(rapha, 'POST', `/api/lobby/${code}/result`, { scoreA: 13, scoreB: 9 })
+    .then(() => { throw new Error('FALHA: rota de placar manual ainda existe!'); })
+    .catch(e => { if (e.message.includes('404')) console.log('✓ registro manual removido (rota → 404)'); else throw e; });
   s = await call(rapha, 'GET', `/api/lobby/${code}`);
-  console.log('✓ placar registrado → status:', s.lobby.status,
-    '| placar:', s.match.score_a + 'x' + s.match.score_b);
+  console.log('✓ lobby segue pronto aguardando o fim da partida → status:', s.lobby.status);
 
   const rk = await (await fetch(BASE + '/api/ranking')).json();
   console.log('✓ ranking:', rk.ranking.map(p => `${p.name}(${p.elo})`).join(', '));

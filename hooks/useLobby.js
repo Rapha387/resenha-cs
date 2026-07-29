@@ -7,7 +7,7 @@ import { useFlashError } from './useFlashError';
 const INTERVALO = 2000;
 
 // Cuida de todo o ciclo de vida do lobby: identifica quem sou, entra na sala,
-// consulta o estado em loop e expõe as ações (start/pick/ban/result).
+// consulta o estado em loop e expõe as ações (start/pick/ban).
 export function useLobby(code) {
   const router = useRouter();
   const [me, setMe] = useState(null);
@@ -18,8 +18,8 @@ export function useLobby(code) {
   const meRef = useRef(null);
   const buscando = useRef(false);
   const refazer = useRef(false);
-  // 'finalizado' é estado terminal: nada mais muda no lobby, então o polling
-  // de 2s vira só custo (relevante com o site na Vercel e o banco no Turso).
+  // 'finalizado' e 'abandonado' são estados terminais: nada mais muda no
+  // lobby, então o polling de 2s vira só custo (relevante na Vercel + Turso).
   const terminou = useRef(false);
 
   const atualizar = useCallback(async function busca() {
@@ -36,7 +36,7 @@ export function useLobby(code) {
         await api(`/api/lobby/${code}/join`, { method: 'POST' }).catch(() => {});
       }
       const dados = await api(`/api/lobby/${code}`);
-      terminou.current = dados?.lobby?.status === 'finalizado';
+      terminou.current = ['finalizado', 'abandonado'].includes(dados?.lobby?.status);
       setState(dados);
       setNaoExiste(false);
     } catch (e) {

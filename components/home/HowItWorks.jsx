@@ -5,7 +5,7 @@ const PASSOS = [
   'Todo mundo entra com a Steam.',
   'Times por draft de capitães ou balanceados no automático.',
   'Capitães fazem o veto de mapas ao vivo.',
-  'Jogou? Registra o placar e sobe (ou desce) no ranking.',
+  'Jogou? O placar entra sozinho no fim da partida — e você sobe (ou desce) no ranking.',
 ];
 
 export default function HowItWorks() {

@@ -129,8 +129,8 @@ partida pro app.
 
 Com `BACKEND_URL` e `BACKEND_INTERNAL_KEY` configuradas, o site também:
 
-- avisa o backend quando o veto termina (liga a coleta no CS2) e quando o
-  placar é registrado (desliga);
+- avisa o backend quando o veto termina (liga a coleta no CS2); o próprio
+  backend desliga a coleta ao registrar o placar no fim da partida;
 - mostra o **placar ao vivo** na tela do lobby enquanto a galera joga (K/D/A
   de cada um, direto do CS2);
 - **sugere o placar final** no formulário quando a partida acaba — o dono só
@@ -145,4 +145,4 @@ Sem essas variáveis o site funciona exatamente como antes, só sem essas partes
 3. O dono escolhe: **draft de capitães** ou **automático** (times equilibrados pelos ratings)
 4. Capitães fazem o **veto**: ban alternado até sobrar 1 mapa
 5. Criem o lobby no CS2 com o mapa decidido e joguem
-6. O dono registra o placar → elo atualiza (+25/−25, mínimo 0) e o ranking mostra quem carrega e quem passeia
+6. A partida termina no CS2 → o placar é registrado **automaticamente** (via Resenha Client) → elo atualiza (+25/−25, mínimo 0) e o ranking mostra quem carrega e quem passeia

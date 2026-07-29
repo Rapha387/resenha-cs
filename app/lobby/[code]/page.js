@@ -6,6 +6,7 @@ import { useLiveMatch } from '@/hooks/useLiveMatch';
 
 import PageShell from '@/components/layout/PageShell';
 import Alert from '@/components/ui/Alert';
+import EmptyState from '@/components/ui/EmptyState';
 import Loading from '@/components/ui/Loading';
 import DecidedMapPanel from '@/components/lobby/DecidedMapPanel';
 import FinalScorePanel from '@/components/lobby/FinalScorePanel';
@@ -13,7 +14,6 @@ import LobbyCodeBadge from '@/components/lobby/LobbyCodeBadge';
 import LiveScorePanel from '@/components/lobby/LiveScorePanel';
 import LobbyNotFound from '@/components/lobby/LobbyNotFound';
 import MapGrid from '@/components/lobby/MapGrid';
-import ScoreForm from '@/components/lobby/ScoreForm';
 import TeamsBoard from '@/components/lobby/TeamsBoard';
 import TurnBanner from '@/components/lobby/TurnBanner';
 import WaitingRoom from '@/components/lobby/WaitingRoom';
@@ -135,22 +135,11 @@ export default function LobbyPage() {
         <>
           <LiveScorePanel live={live} nomeA={nomeA} nomeB={nomeB} />
           <DecidedMapPanel mapaNome={nomeMapa}>
-            {souDono ? (
-              <ScoreForm
-                nomeA={nomeA}
-                nomeB={nomeB}
-                // Partida encerrada no CS2: já chega com o placar preenchido,
-                // o dono só confere e confirma (o elo só muda no clique).
-                sugestao={live?.finished && live.score_a !== null
-                  ? { a: live.score_a, b: live.score_b }
-                  : null}
-                onSubmit={(scoreA, scoreB) => acao('result', { scoreA, scoreB })}
-              />
-            ) : (
-              <p className="fraco mt">
-                Aguardando <b>{nomeDe(lobby.owner)}</b> registrar o placar depois do jogo.
-              </p>
-            )}
+            <p className="fraco mt">
+              {live?.finished
+                ? '🏁 Partida encerrada — registrando o placar automaticamente…'
+                : 'O placar é registrado sozinho quando a partida termina no CS2 (precisa de pelo menos um jogador com o Resenha Client aberto).'}
+            </p>
           </DecidedMapPanel>
           <div className="mt">{times(false)}</div>
           <div className="mt">{mapas}</div>
@@ -165,6 +154,21 @@ export default function LobbyPage() {
             nomeA={nomeA}
             nomeB={nomeB}
           />
+          <div className="mt">{times(false)}</div>
+        </>
+      )}
+
+      {lobby.status === 'abandonado' && (
+        <>
+          <EmptyState
+            className="mt"
+            icone="⏳"
+            titulo="Partida encerrada sem registro"
+          >
+            O fim do jogo não foi detectado — ninguém estava com o Resenha Client
+            aberto, ou a partida terminou empatada. Nenhum elo mudou; é só criar
+            outro lobby pra próxima.
+          </EmptyState>
           <div className="mt">{times(false)}</div>
         </>
       )}
