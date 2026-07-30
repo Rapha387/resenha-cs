@@ -14,6 +14,7 @@ import Loading from '@/components/ui/Loading';
 import Panel from '@/components/ui/Panel';
 import SectionTitle from '@/components/ui/SectionTitle';
 import Hero from '@/components/home/Hero';
+import { CLIENT_INSTALADOR } from '@/components/home/ClientDownload';
 import HowItWorks from '@/components/home/HowItWorks';
 import JoinLobbyForm from '@/components/home/JoinLobbyForm';
 import ProfilePanel from '@/components/home/ProfilePanel';
@@ -46,7 +47,10 @@ export default function Home() {
     >
       <Hero>
         {carregando ? null : !user ? (
-          <Button variante="steam" href="/api/auth/steam">🎮 Entrar com a Steam</Button>
+          <>
+            <Button variante="steam" href="/api/auth/steam">🎮 Entrar com a Steam</Button>
+            <Button variante="ct" href={CLIENT_INSTALADOR} download>⬇ Baixar o Client</Button>
+          </>
         ) : (
           <>
             <Button variante="tr" onClick={criarLobby}>Criar lobby</Button>
