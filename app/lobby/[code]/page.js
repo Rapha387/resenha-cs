@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useLobby } from '@/hooks/useLobby';
 import { useLiveMatch } from '@/hooks/useLiveMatch';
+import { nomeDoMapa } from '@/lib/maps';
 
 import PageShell from '@/components/layout/PageShell';
 import Alert from '@/components/ui/Alert';
@@ -69,10 +70,9 @@ export default function LobbyPage() {
   }
 
   const { lobby, players, vetoes, maps, match } = state;
-  const { souDono, minhaVez, vezDoA, nomeDe, jogadorDaVez, mapaDecidido } = derivado;
+  const { souDono, minhaVez, vezDoA, nomeDe, jogadorDaVez } = derivado;
   const nomeA = nomeDe(lobby.cap_a);
   const nomeB = nomeDe(lobby.cap_b);
-  const nomeMapa = mapaDecidido?.nome || lobby.decider_map;
 
   const times = (bancoClicavel) => (
     <TeamsBoard
@@ -134,7 +134,7 @@ export default function LobbyPage() {
       {lobby.status === 'pronto' && (
         <>
           <LiveScorePanel live={live} nomeA={nomeA} nomeB={nomeB} />
-          <DecidedMapPanel mapaNome={nomeMapa}>
+          <DecidedMapPanel mapaNome={nomeDoMapa(lobby.decider_map)}>
             <p className="fraco mt">
               {live?.finished
                 ? '🏁 Partida encerrada — registrando o placar automaticamente…'
@@ -149,7 +149,7 @@ export default function LobbyPage() {
       {lobby.status === 'finalizado' && match && (
         <>
           <FinalScorePanel
-            mapaNome={maps.find(m => m.id === match.map)?.nome || match.map}
+            mapaNome={nomeDoMapa(match.map)}
             match={match}
             nomeA={nomeA}
             nomeB={nomeB}

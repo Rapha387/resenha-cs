@@ -1,45 +1,36 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { currentUser } from '@/lib/session';
-import { MAPS } from '@/lib/game';
+import { MAPS } from '@/lib/maps';
 import { notifyBackend } from '@/lib/backend';
+import { rotaAutenticada, carregarLobby, corpoJson, erro } from '@/lib/rotas';
 export const dynamic = 'force-dynamic';
 
-export async function POST(request, { params }) {
-  const user = await currentUser();
-  if (!user) return NextResponse.json({ erro: 'Faça login com a Steam primeiro' }, { status: 401 });
-  const code = params.code.toUpperCase();
-  const { map } = await request.json().catch(() => ({}));
+export const POST = rotaAutenticada(async ({ user, code, request }) => {
+  const { map } = await corpoJson(request);
+  const lobby = await carregarLobby(code, 'veto', 'Não é hora de veto.');
 
-  const lobby = await db.prepare('SELECT * FROM lobbies WHERE code = ?').get(code);
-  if (!lobby || lobby.status !== 'veto')
-    return NextResponse.json({ erro: 'Não é hora de veto.' }, { status: 400 });
-  if (lobby.turn !== user.steamid)
-    return NextResponse.json({ erro: 'Não é sua vez de banir.' }, { status: 403 });
-  if (!MAPS.find(m => m.id === map))
-    return NextResponse.json({ erro: 'Mapa inválido.' }, { status: 400 });
+  if (lobby.turn !== user.steamid) throw erro(403, 'Não é sua vez de banir.');
+  if (!MAPS.find((m) => m.id === map)) throw erro(400, 'Mapa inválido.');
 
-  const banned = (await db.prepare('SELECT map FROM vetoes WHERE code = ?').all(code)).map(v => v.map);
-  if (banned.includes(map))
-    return NextResponse.json({ erro: 'Esse mapa já foi banido.' }, { status: 400 });
+  const banidos = (await db.prepare('SELECT map FROM vetoes WHERE code = ?').all(code)).map((v) => v.map);
+  if (banidos.includes(map)) throw erro(400, 'Esse mapa já foi banido.');
 
   // OR IGNORE + rowsAffected fecha a corrida do duplo clique: dois POSTs do
   // mesmo ban chegavam juntos, os dois passavam no check acima e o segundo
   // INSERT estourava a PRIMARY KEY (code, map) — erro 500 na tela do capitão.
   const ins = await db.prepare('INSERT OR IGNORE INTO vetoes (code, map, banned_by, ord) VALUES (?, ?, ?, ?)')
-    .run(code, map, user.steamid, banned.length + 1);
-  if (Number(ins.rowsAffected) === 0)
-    return NextResponse.json({ erro: 'Esse mapa já foi banido.' }, { status: 400 });
+    .run(code, map, user.steamid, banidos.length + 1);
+  if (Number(ins.rowsAffected) === 0) throw erro(400, 'Esse mapa já foi banido.');
 
-  const remaining = MAPS.filter(m => !banned.includes(m.id) && m.id !== map);
-  if (remaining.length === 1) {
+  const restantes = MAPS.filter((m) => !banidos.includes(m.id) && m.id !== map);
+  if (restantes.length === 1) {
     await db.prepare('UPDATE lobbies SET status = ?, decider_map = ?, turn = NULL WHERE code = ?')
-      .run('pronto', remaining[0].id, code);
+      .run('pronto', restantes[0].id, code);
     // Veto encerrado: o backend dedicado manda START_MATCH pros Resenha Clients
     await notifyBackend('/internal/match/start', { code });
   } else {
-    const next = lobby.turn === lobby.cap_a ? lobby.cap_b : lobby.cap_a;
-    await db.prepare('UPDATE lobbies SET turn = ? WHERE code = ?').run(next, code);
+    const proximo = lobby.turn === lobby.cap_a ? lobby.cap_b : lobby.cap_a;
+    await db.prepare('UPDATE lobbies SET turn = ? WHERE code = ?').run(proximo, code);
   }
-  return NextResponse.json({ ok: true });
-}
+
+  return { ok: true };
+});

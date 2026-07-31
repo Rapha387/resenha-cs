@@ -1,11 +1,7 @@
 'use client';
 import Panel from '@/components/ui/Panel';
 import Avatar from '@/components/ui/Avatar';
-
-const MAPA_NOMES = {
-  de_ancient: 'Ancient', de_anubis: 'Anubis', de_dust2: 'Dust II', de_inferno: 'Inferno',
-  de_mirage: 'Mirage', de_nuke: 'Nuke', de_train: 'Train', de_overpass: 'Overpass', de_vertigo: 'Vertigo',
-};
+import { nomeDoMapa } from '@/lib/maps';
 
 function Linha({ p }) {
   const classe = [
@@ -54,7 +50,7 @@ export default function LiveScorePanel({ live, nomeA, nomeB }) {
           {finished ? '● ENCERRADA' : '● AO VIVO'}
         </span>
         <span className="fraco">
-          {map ? (MAPA_NOMES[map] || map) : '—'} · {situacao}
+          {map ? nomeDoMapa(map) : '—'} · {situacao}
         </span>
       </div>
 

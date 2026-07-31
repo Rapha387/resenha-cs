@@ -1,33 +1,29 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { currentUser } from '@/lib/session';
+import { rotaAutenticada, carregarLobby, corpoJson, erro } from '@/lib/rotas';
 export const dynamic = 'force-dynamic';
 
-export async function POST(request, { params }) {
-  const user = await currentUser();
-  if (!user) return NextResponse.json({ erro: 'Faça login com a Steam primeiro' }, { status: 401 });
-  const code = params.code.toUpperCase();
-  const { steamid } = await request.json().catch(() => ({}));
+export const POST = rotaAutenticada(async ({ user, code, request }) => {
+  const { steamid } = await corpoJson(request);
+  const lobby = await carregarLobby(code, 'draft', 'Não é hora de draft.');
 
-  const lobby = await db.prepare('SELECT * FROM lobbies WHERE code = ?').get(code);
-  if (!lobby || lobby.status !== 'draft')
-    return NextResponse.json({ erro: 'Não é hora de draft.' }, { status: 400 });
-  if (lobby.turn !== user.steamid)
-    return NextResponse.json({ erro: 'Não é sua vez de escolher.' }, { status: 403 });
+  if (lobby.turn !== user.steamid) throw erro(403, 'Não é sua vez de escolher.');
 
-  const target = await db.prepare('SELECT * FROM lobby_players WHERE code = ? AND steamid = ?').get(code, steamid);
-  if (!target || target.team)
-    return NextResponse.json({ erro: 'Jogador indisponível.' }, { status: 400 });
+  const alvo = await db.prepare('SELECT * FROM lobby_players WHERE code = ? AND steamid = ?').get(code, steamid);
+  if (!alvo || alvo.team) throw erro(400, 'Jogador indisponível.');
 
-  const myTeam = lobby.turn === lobby.cap_a ? 'A' : 'B';
-  await db.prepare('UPDATE lobby_players SET team = ? WHERE code = ? AND steamid = ?').run(myTeam, code, steamid);
+  const meuTime = lobby.turn === lobby.cap_a ? 'A' : 'B';
+  await db.prepare('UPDATE lobby_players SET team = ? WHERE code = ? AND steamid = ?').run(meuTime, code, steamid);
 
-  const remaining = (await db.prepare('SELECT COUNT(*) c FROM lobby_players WHERE code = ? AND team IS NULL').get(code)).c;
-  if (remaining === 0) {
+  const semTime = (await db.prepare(
+    'SELECT COUNT(*) c FROM lobby_players WHERE code = ? AND team IS NULL'
+  ).get(code)).c;
+
+  if (semTime === 0) {
     await db.prepare('UPDATE lobbies SET status = ?, turn = ? WHERE code = ?').run('veto', lobby.cap_a, code);
   } else {
-    const next = lobby.turn === lobby.cap_a ? lobby.cap_b : lobby.cap_a;
-    await db.prepare('UPDATE lobbies SET turn = ? WHERE code = ?').run(next, code);
+    const proximo = lobby.turn === lobby.cap_a ? lobby.cap_b : lobby.cap_a;
+    await db.prepare('UPDATE lobbies SET turn = ? WHERE code = ?').run(proximo, code);
   }
-  return NextResponse.json({ ok: true });
-}
+
+  return { ok: true };
+});

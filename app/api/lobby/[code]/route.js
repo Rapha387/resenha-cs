@@ -1,12 +1,9 @@
-import { NextResponse } from 'next/server';
-import { currentUser } from '@/lib/session';
-import { lobbyState } from '@/lib/game';
+import { lobbyState } from '@/lib/lobby';
+import { rotaAutenticada, erro } from '@/lib/rotas';
 export const dynamic = 'force-dynamic';
 
-export async function GET(request, { params }) {
-  const user = await currentUser();
-  if (!user) return NextResponse.json({ erro: 'Faça login com a Steam primeiro' }, { status: 401 });
-  const state = await lobbyState(params.code.toUpperCase());
-  if (!state) return NextResponse.json({ erro: 'Lobby não encontrado.' }, { status: 404 });
-  return NextResponse.json(state);
-}
+export const GET = rotaAutenticada(async ({ code }) => {
+  const estado = await lobbyState(code);
+  if (!estado) throw erro(404, 'Lobby não encontrado.');
+  return estado;
+});

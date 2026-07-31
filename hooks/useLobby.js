@@ -79,7 +79,6 @@ export function useLobby(code) {
       vezDoA: lobby.turn === lobby.cap_a,
       nomeDe,
       jogadorDaVez: players.find(p => p.steamid === lobby.turn) || null,
-      mapaDecidido: state.maps.find(m => m.id === lobby.decider_map) || null,
     };
   }, [state, me]);
 

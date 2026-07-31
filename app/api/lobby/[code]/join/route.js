@@ -1,24 +1,26 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { currentUser } from '@/lib/session';
+import { rotaAutenticada, carregarLobby, erro } from '@/lib/rotas';
 export const dynamic = 'force-dynamic';
 
-export async function POST(request, { params }) {
-  const user = await currentUser();
-  if (!user) return NextResponse.json({ erro: 'Faça login com a Steam primeiro' }, { status: 401 });
-  const code = params.code.toUpperCase();
-  const lobby = await db.prepare('SELECT * FROM lobbies WHERE code = ?').get(code);
-  if (!lobby) return NextResponse.json({ erro: 'Lobby não encontrado. Confere o código.' }, { status: 404 });
+const LOTACAO = 10;
 
-  const already = await db.prepare('SELECT 1 FROM lobby_players WHERE code = ? AND steamid = ?').get(code, user.steamid);
-  if (already) return NextResponse.json({ code }); // já tá dentro: ok (corrige loop de erro da v1)
+export const POST = rotaAutenticada(async ({ user, code }) => {
+  // Uma consulta só do lobby: o estado exigido depende de já estar dentro ou
+  // não, então a checagem vem depois — não dá pra delegar pro carregarLobby.
+  const lobby = await carregarLobby(code);
 
-  if (lobby.status !== 'aguardando')
-    return NextResponse.json({ erro: 'A partida já começou nesse lobby.' }, { status: 400 });
-  const count = (await db.prepare('SELECT COUNT(*) c FROM lobby_players WHERE code = ?').get(code)).c;
-  if (count >= 10) return NextResponse.json({ erro: 'Lobby cheio (10 jogadores).' }, { status: 400 });
+  // Já está dentro: responde ok em vez de erro (corrige loop da v1, e deixa
+  // o polling do lobby chamar isso à vontade).
+  const dentro = await db.prepare('SELECT 1 FROM lobby_players WHERE code = ? AND steamid = ?')
+    .get(code, user.steamid);
+  if (dentro) return { code };
+
+  if (lobby.status !== 'aguardando') throw erro(400, 'A partida já começou nesse lobby.');
+
+  const { c: total } = await db.prepare('SELECT COUNT(*) c FROM lobby_players WHERE code = ?').get(code);
+  if (total >= LOTACAO) throw erro(400, `Lobby cheio (${LOTACAO} jogadores).`);
 
   await db.prepare('INSERT INTO lobby_players (code, steamid, joined) VALUES (?, ?, ?)')
     .run(code, user.steamid, Date.now());
-  return NextResponse.json({ code });
-}
+  return { code };
+});

@@ -519,25 +519,6 @@ table.ranking tr.eu { background: rgba(94, 155, 214, .07); }
 }
 .resultado-mapa .vencedor { margin-top: 6px; }
 
-.placar-form { margin-top: 22px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
-.placar-linha { display: flex; align-items: flex-end; justify-content: center; gap: 14px; flex-wrap: wrap; }
-.placar-lado { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.placar-lado > span {
-  font-family: var(--display); font-weight: 700; font-size: 15px;
-  letter-spacing: .08em; text-transform: uppercase;
-  max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.placar-lado.lado-a > span { color: var(--tr); }
-.placar-lado.lado-b > span { color: var(--ct); }
-.placar-lado input {
-  width: 88px; text-align: center;
-  font-size: 26px; font-weight: 700;
-  appearance: textfield; -moz-appearance: textfield;
-}
-.placar-lado input::-webkit-outer-spin-button,
-.placar-lado input::-webkit-inner-spin-button { appearance: none; margin: 0; }
-.placar-form .x { font-family: var(--display); font-size: 26px; color: var(--texto-fraco); padding-bottom: 10px; }
-
 .placar-final {
   display: flex; align-items: center; justify-content: center; gap: 18px;
   font-family: var(--display); font-weight: 800; font-size: 56px;

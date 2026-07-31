@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { sign, COOKIE_NAME, cookieOptionsFor } from '@/lib/session';
 import { fetchSteamProfile } from '@/lib/steam';
-import { refreshStats } from '@/lib/game';
+import { refreshStats } from '@/lib/leetify';
 import { baseUrl } from '@/lib/baseUrl';
 
 export const dynamic = 'force-dynamic';
