@@ -52,6 +52,28 @@ public/client/    ResenhaClient-setup.exe (instalador servido no site)
 - **O placar é registrado automaticamente pelo backend.** O formulário manual
   foi removido — não recrie.
 
+## Princípios e padrões
+
+Clean Code, SOLID, DRY, KISS e YAGNI — **até onde pagam**.
+
+- **S**: cada módulo de `lib/` tem um assunto (`maps`, `times`, `codigos`,
+  `lobby`, `rotas`). Grab-bag de utilidades não sobrevive à revisão.
+- **O/I**: `rotaAutenticada` envelopa o que é comum; a rota fica só com a
+  regra. **Não exporte o que só é usado dentro do próprio arquivo.**
+- **DRY** vale para duplicação **real**; semelhança coincidente que muda por
+  motivos diferentes fica separada.
+- **KISS**: sem ORM e **sem TypeScript**, por decisão. Antes de introduzir uma
+  camada, pergunte o que ela remove — não o que ela adiciona.
+- **YAGNI**: a escala real é uma sala de 10 jogadores. Não construa para 10 mil.
+
+**Adotados:** envelope/decorator (`rotaAutenticada`), componentes por domínio
+com `ui/` como vocabulário visual, hooks para todo estado de servidor.
+
+**Rejeitados de propósito** — não reintroduza sem argumentar o ganho concreto:
+**Repository Pattern** (há um banco só e os testes são de integração contra
+ele), **Service Layer** (as rotas têm ~20 linhas de regra) e **DTOs formais**
+(o contrato é o objeto que a rota devolve, documentado no README).
+
 ## Regras deste projeto
 
 **Rotas**
